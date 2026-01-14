@@ -98,7 +98,7 @@ export function Hero({ promotions }: HeroProps) {
         {/* center carousel */}
         <Card
           ref={cardRef}
-          className="relative overflow-visible focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+          className="relative overflow-visible focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 min-h-0"
           tabIndex={0}
           role="region"
           aria-label="Carousel khuyến mãi"
@@ -133,10 +133,10 @@ export function Hero({ promotions }: HeroProps) {
             <ChevronRight className="h-5 w-5" />
           </Button>
 
-          <div className="relative flex min-h-[200px] aspect-video md:min-h-[320px] items-stretch p-4 sm:p-6 md:p-10 overflow-hidden">
-            <div className="flex w-full flex-col gap-6 overflow-hidden relative z-0">
+          <div className="relative flex flex-col min-h-[280px] md:min-h-[320px] p-4 sm:p-6 md:p-10 overflow-hidden">
+            <div className="flex w-full flex-1 items-stretch gap-4 md:gap-6 overflow-hidden relative z-0">
               {/* Combined Content Container */}
-              <div className="flex w-full items-stretch gap-6 overflow-hidden">
+              <div className="flex w-full items-stretch gap-4 md:gap-6 overflow-hidden">
                 <AnimatePresence mode="wait" custom={active}>
                   <motion.div
                     key={promo.id}
@@ -145,11 +145,11 @@ export function Hero({ promotions }: HeroProps) {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -300 }}
                     transition={{ duration: 0.5, ease: "easeInOut" }}
-                    className="flex w-full flex-1 items-stretch gap-6 relative z-0"
+                    className="flex w-full flex-1 items-stretch gap-4 md:gap-6 relative z-0"
                   >
                     {/* Text Content */}
-                    <div className="flex w-full flex-col justify-between gap-6">
-                      <div className="space-y-4">
+                    <div className="flex w-full flex-col justify-between gap-4 md:gap-6 min-h-0">
+                      <div className="space-y-3 md:space-y-4">
                         <div
                           className={cn(
                             "inline-flex items-center gap-1.5 rounded-full bg-white/5 px-2.5 py-0.5 text-[10px] font-semibold text-muted-foreground shadow-[inset_0_0_0_1px_rgba(255,255,255,0.10)]"
@@ -159,16 +159,18 @@ export function Hero({ promotions }: HeroProps) {
                           Khuyến mãi nổi bật
                         </div>
 
-                        <h1 className="text-balance text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+                        <h1 className="text-balance text-xl font-extrabold tracking-tight text-foreground sm:text-2xl md:text-3xl">
                           {promo.title}
                         </h1>
-                        <p className="max-w-xl text-pretty text-xs text-muted-foreground sm:text-sm">
+                        <p className="max-w-xl text-pretty text-xs text-muted-foreground sm:text-sm line-clamp-2 md:line-clamp-none">
                           {promo.subtitle}
                         </p>
 
                         <div className="flex flex-wrap items-center gap-2">
-                          <Button size="default">{promo.cta}</Button>
-                          <Button size="default" variant="outline">
+                          <Button size="sm" className="md:size-default min-h-[44px]">
+                            {promo.cta}
+                          </Button>
+                          <Button size="sm" variant="outline" className="md:size-default min-h-[44px]">
                             Xem danh mục
                           </Button>
                         </div>
@@ -191,29 +193,29 @@ export function Hero({ promotions }: HeroProps) {
                   </motion.div>
                 </AnimatePresence>
               </div>
+            </div>
 
-              {/* Pagination Dots - Bottom Center */}
-              <div
-                className="flex items-center justify-center gap-2"
-                role="tablist"
-                aria-label="Điều hướng slides"
-              >
-                {promotions.map((p, idx) => (
-                  <button
-                    key={p.id}
-                    onClick={() => goToSlide(idx)}
-                    className={cn(
-                      "h-2.5 w-2.5 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2",
-                      idx === active
-                        ? "bg-gradient-to-r from-violet-400 to-cyan-300 shadow-[0_0_20px_rgba(168,85,247,0.55)] scale-110"
-                        : "bg-white/15 hover:bg-white/25 hover:scale-105"
-                    )}
-                    role="tab"
-                    aria-selected={idx === active}
-                    aria-label={`Chuyển đến slide ${idx + 1}`}
-                  />
-                ))}
-              </div>
+            {/* Pagination Dots - Bottom Center */}
+            <div
+              className="flex items-center justify-center gap-2 mt-auto pt-2"
+              role="tablist"
+              aria-label="Điều hướng slides"
+            >
+              {promotions.map((p, idx) => (
+                <button
+                  key={p.id}
+                  onClick={() => goToSlide(idx)}
+                  className={cn(
+                    "h-2.5 w-2.5 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2",
+                    idx === active
+                      ? "bg-gradient-to-r from-violet-400 to-cyan-300 shadow-[0_0_20px_rgba(168,85,247,0.55)] scale-110"
+                      : "bg-white/15 hover:bg-white/25 hover:scale-105"
+                  )}
+                  role="tab"
+                  aria-selected={idx === active}
+                  aria-label={`Chuyển đến slide ${idx + 1}`}
+                />
+              ))}
             </div>
           </div>
         </Card>

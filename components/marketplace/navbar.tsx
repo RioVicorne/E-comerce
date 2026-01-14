@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { LogIn, ShoppingCart, Menu, X, Globe, Search } from "lucide-react";
+import { LogIn, ShoppingCart, Menu, X, Search } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -15,12 +15,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { iconMap } from "@/components/marketplace/icons";
 
 type NavbarProps = {
@@ -32,7 +26,6 @@ export function Navbar({ cartCount = 0, onCartClick }: NavbarProps) {
   const SearchIcon = iconMap.search;
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [searchExpanded, setSearchExpanded] = React.useState(false);
-  const [language, setLanguage] = React.useState("vi");
 
   const navItems = [
     { href: "#news", label: "Tin tức Game" },
@@ -44,7 +37,7 @@ export function Navbar({ cartCount = 0, onCartClick }: NavbarProps) {
     <header className="sticky top-0 z-40 border-b border-white/10 bg-background/55 backdrop-blur-xl">
       <div className="relative">
         <div className="pointer-events-none absolute inset-0 grid-overlay opacity-30" />
-        <div className="mx-auto flex w-full max-w-7xl items-center gap-2 px-4 py-3 md:gap-3">
+        <div className="mx-auto flex w-full max-w-7xl items-center gap-2 px-4 py-3 md:gap-3 relative">
           {/* Hamburger Menu - Mobile Only */}
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
@@ -74,41 +67,6 @@ export function Navbar({ cartCount = 0, onCartClick }: NavbarProps) {
                     {item.label}
                   </Link>
                 ))}
-                <div className="mt-4 border-t border-white/10 pt-4">
-                  <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Ngôn ngữ
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <button
-                      onClick={() => {
-                        setLanguage("vi");
-                        setMobileMenuOpen(false);
-                      }}
-                      className={cn(
-                        "rounded-xl px-4 py-3 text-left text-sm font-semibold transition",
-                        language === "vi"
-                          ? "bg-white/10 text-foreground"
-                          : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
-                      )}
-                    >
-                      Tiếng Việt
-                    </button>
-                    <button
-                      onClick={() => {
-                        setLanguage("en");
-                        setMobileMenuOpen(false);
-                      }}
-                      className={cn(
-                        "rounded-xl px-4 py-3 text-left text-sm font-semibold transition",
-                        language === "en"
-                          ? "bg-white/10 text-foreground"
-                          : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
-                      )}
-                    >
-                      English
-                    </button>
-                  </div>
-                </div>
               </nav>
             </SheetContent>
           </Sheet>
@@ -147,44 +105,9 @@ export function Navbar({ cartCount = 0, onCartClick }: NavbarProps) {
             ))}
           </nav>
 
-          {/* Search Bar */}
-          <div className="flex flex-1 items-center justify-center">
-            {/* Mobile: Search Icon that expands */}
-            <div className="md:hidden">
-              {!searchExpanded ? (
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  onClick={() => setSearchExpanded(true)}
-                  aria-label="Tìm kiếm"
-                  className="min-h-[44px] min-w-[44px]"
-                >
-                  <Search className="h-4 w-4" />
-                </Button>
-              ) : (
-                <div className="relative w-[200px]">
-                  <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Tìm kiếm…"
-                    className="h-10 pl-9 pr-8"
-                    autoFocus
-                    onBlur={() => setSearchExpanded(false)}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
-                    onClick={() => setSearchExpanded(false)}
-                    aria-label="Đóng tìm kiếm"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            {/* Desktop: Full Search Bar */}
-            <div className="relative hidden w-full max-w-xl md:block">
+          {/* Search Bar - Desktop Only */}
+          <div className="hidden md:flex flex-1 items-center justify-center min-w-0 mx-2">
+            <div className="relative w-full max-w-xl">
               <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Tìm kiếm game key, bản quyền, thẻ quà tặng…"
@@ -194,38 +117,57 @@ export function Navbar({ cartCount = 0, onCartClick }: NavbarProps) {
             </div>
           </div>
 
-          {/* Desktop Language Toggle */}
-          <div className="hidden items-center gap-2 md:flex">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  aria-label="Chọn ngôn ngữ"
-                  className="min-h-[44px] min-w-[44px]"
-                >
-                  <Globe className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() => setLanguage("vi")}
-                  className={language === "vi" ? "bg-white/10" : ""}
-                >
-                  Tiếng Việt
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setLanguage("en")}
-                  className={language === "en" ? "bg-white/10" : ""}
-                >
-                  English
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          {/* Mobile: Expanded Search (overlay below navbar) */}
+          {searchExpanded && (
+            <>
+              {/* Backdrop */}
+              <div
+                className="fixed inset-0 z-40 bg-black/20 md:hidden"
+                onClick={() => setSearchExpanded(false)}
+              />
+              {/* Search Bar */}
+              <div className="fixed inset-x-0 top-[68px] z-50 md:hidden bg-background/98 backdrop-blur-xl border-b border-white/10 shadow-lg">
+                <div className="relative w-full px-4 py-3">
+                  <SearchIcon className="pointer-events-none absolute left-7 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Tìm kiếm game key, bản quyền, thẻ quà tặng…"
+                    className="h-12 pl-11 pr-12 w-full"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") {
+                        setSearchExpanded(false);
+                      }
+                    }}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-7 top-1/2 h-10 w-10 -translate-y-1/2"
+                    onClick={() => setSearchExpanded(false)}
+                    aria-label="Đóng tìm kiếm"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 ml-auto">
+            {/* Mobile: Search Button */}
+            {!searchExpanded && (
+              <Button
+                variant="secondary"
+                size="icon"
+                onClick={() => setSearchExpanded(true)}
+                aria-label="Tìm kiếm"
+                className="md:hidden min-h-[44px] min-w-[44px]"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            )}
+
             <Button
               variant="secondary"
               size="icon"
