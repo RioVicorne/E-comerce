@@ -25,7 +25,7 @@ export function ProductTabs({ products, onBuyNow, onAddToCart }: ProductTabsProp
     .sort((a, b) => b.rating - a.rating);
 
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 pt-10 pb-16">
+    <section className="mx-auto w-full max-w-7xl px-4 pt-6 pb-12 md:pt-10 md:pb-16">
       <div className="mb-4 flex items-end justify-between gap-4">
         <div>
           <div className="text-xl font-extrabold tracking-tight text-foreground">
@@ -72,7 +72,7 @@ function Grid({
   onAddToCart?: (p: Product) => void;
 }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-2 gap-2 md:gap-4 md:grid-cols-2 lg:grid-cols-3">
       {products.map((p) => (
         <ProductCard
           key={p.id}

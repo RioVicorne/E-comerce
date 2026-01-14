@@ -14,8 +14,8 @@ export type QuickAccessItem = {
 
 export function QuickAccess({ items }: { items: QuickAccessItem[] }) {
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 pt-8">
-      <div className="flex flex-wrap gap-3">
+    <section className="mx-auto w-full max-w-7xl px-4 pt-4 md:pt-8">
+      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory md:flex-wrap md:overflow-x-visible md:pb-0">
         {items.map((it) => {
           const Icon = iconMap[it.icon] ?? iconMap.sparkles;
           return (
@@ -24,7 +24,7 @@ export function QuickAccess({ items }: { items: QuickAccessItem[] }) {
               whileHover={{ y: -3, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className={cn(
-                "inline-flex items-center gap-2 rounded-2xl bg-white/5 px-4 py-3 text-sm font-semibold text-foreground shadow-[inset_0_0_0_1px_rgba(255,255,255,0.10)] transition hover:bg-white/10",
+                "inline-flex shrink-0 items-center gap-2 rounded-2xl bg-white/5 px-4 py-3 text-sm font-semibold text-foreground shadow-[inset_0_0_0_1px_rgba(255,255,255,0.10)] transition hover:bg-white/10 snap-start",
               )}
               type="button"
             >

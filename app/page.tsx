@@ -76,7 +76,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="app-bg min-h-dvh">
+    <div className="app-bg min-h-dvh overflow-x-hidden">
       <Navbar
         cartCount={cartCount}
         onCartClick={() => setCartOpen(true)}

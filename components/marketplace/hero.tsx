@@ -77,7 +77,7 @@ export function Hero({ promotions }: HeroProps) {
   const isLastSlide = active === promotions.length - 1;
 
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 pt-8">
+    <section className="mx-auto w-full max-w-7xl px-4 pt-4 md:pt-8">
       <div className="grid gap-4 lg:grid-cols-[240px_1fr_240px]">
         {/* left floating banner */}
         <div className="hidden lg:block">
@@ -133,7 +133,7 @@ export function Hero({ promotions }: HeroProps) {
             <ChevronRight className="h-5 w-5" />
           </Button>
 
-          <div className="relative flex min-h-[320px] items-stretch p-6 sm:p-10 overflow-hidden">
+          <div className="relative flex min-h-[200px] aspect-video md:min-h-[320px] items-stretch p-4 sm:p-6 md:p-10 overflow-hidden">
             <div className="flex w-full flex-col gap-6 overflow-hidden relative z-0">
               {/* Combined Content Container */}
               <div className="flex w-full items-stretch gap-6 overflow-hidden">

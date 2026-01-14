@@ -17,7 +17,7 @@ export type BentoCategory = {
 
 export function BentoGrid({ categories }: { categories: BentoCategory[] }) {
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 pt-8">
+    <section className="mx-auto w-full max-w-7xl px-4 pt-4 md:pt-8">
       <div className="mb-4 flex items-end justify-between gap-4">
         <div>
           <div className="text-xl font-extrabold tracking-tight text-foreground">
@@ -29,7 +29,7 @@ export function BentoGrid({ categories }: { categories: BentoCategory[] }) {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-2 gap-3 md:gap-4 md:grid-cols-2 lg:grid-cols-4">
         {categories.map((c) => {
           const Icon = iconMap[c.icon] ?? iconMap.sparkles;
           return (

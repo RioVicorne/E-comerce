@@ -41,7 +41,7 @@ export function ProductCard({
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(168,85,247,0.18),transparent_45%)] opacity-0 transition group-hover:opacity-100" />
         <div className="pointer-events-none absolute inset-0 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)] transition group-hover:shadow-[inset_0_0_0_1px_rgba(168,85,247,0.35)]" />
 
-        <CardContent className="p-4">
+        <CardContent className="p-3 md:p-4">
           <div className="relative overflow-hidden rounded-xl bg-white/5">
             <Image
               src={product.image}
@@ -109,13 +109,14 @@ export function ProductCard({
                 size="icon"
                 onClick={() => onAddToCart?.(product)}
                 aria-label="Thêm vào giỏ hàng"
+                className="min-h-[44px] min-w-[44px]"
               >
                 <ShoppingCart className="h-4 w-4" />
               </Button>
               <Button
                 size="sm"
                 onClick={() => onBuyNow?.(product)}
-                className="shadow-[0_20px_70px_-40px_rgba(34,211,238,0.8)]"
+                className="min-h-[44px] shadow-[0_20px_70px_-40px_rgba(34,211,238,0.8)]"
               >
                 Mua ngay
               </Button>
