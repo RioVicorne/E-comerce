@@ -36,6 +36,8 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
   >("idle");
   const [currentTime, setCurrentTime] = React.useState(Date.now());
   const [qrImageError, setQrImageError] = React.useState(false);
+  const [qrDescription, setQrDescription] = React.useState<string>("");
+  const [qrAmount, setQrAmount] = React.useState<number>(0);
   const timerIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const deposit = useWalletStore((state) => state.deposit);
@@ -66,6 +68,8 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
       setQrGeneratedAt(null);
       setPaymentStatus("idle");
       setQrImageError(false);
+      setQrDescription("");
+      setQrAmount(0);
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
       }
@@ -81,9 +85,15 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
     if (numAmount <= 0 || isNaN(numAmount)) {
       return;
     }
+    const timestamp = Date.now();
+    const description = `Nap tien vao vi ${timestamp}`;
+    
     setQrGenerated(true);
-    setQrGeneratedAt(Date.now());
+    setQrGeneratedAt(timestamp);
+    setQrDescription(description);
+    setQrAmount(numAmount);
     setPaymentStatus("pending");
+    setQrImageError(false);
   };
 
   const handleSimulatePayment = () => {
@@ -104,7 +114,6 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
   const bankName = "VPBank";
   const accountNumber = "1105200789";
   const accountName = "TRAN DINH KHOA";
-  const description = `Nap tien vao vi ${Date.now()}`;
 
   const elapsed = qrGeneratedAt ? currentTime - qrGeneratedAt : 0;
   const remainingMs = Math.max(0, QR_TIMEOUT_MS - elapsed);
@@ -113,7 +122,13 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
   const isExpired = paymentStatus === "expired" || remainingMs === 0;
   const isPaid = paymentStatus === "completed";
 
-  const vietQrImageUrl = `https://img.vietqr.io/image/VPB-${accountNumber}-compact.png?amount=${numAmount}&addInfo=${encodeURIComponent(description)}`;
+  // Memoize QR URL to prevent unnecessary reloads
+  const vietQrImageUrl = React.useMemo(() => {
+    if (!qrGenerated || !qrDescription || qrAmount === 0) {
+      return "";
+    }
+    return `https://img.vietqr.io/image/VPB-${accountNumber}-compact.png?amount=${qrAmount}&addInfo=${encodeURIComponent(qrDescription)}`;
+  }, [qrGenerated, qrDescription, qrAmount, accountNumber]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -186,7 +201,7 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
                 <div className="text-center space-y-2">
                   <h3 className="text-lg font-semibold">Nạp tiền thành công!</h3>
                   <p className="text-sm text-muted-foreground">
-                    Đã nạp {formatVnd(numAmount)} vào ví của bạn
+                    Đã nạp {formatVnd(qrAmount || numAmount)} vào ví của bạn
                   </p>
                 </div>
               </div>
@@ -197,8 +212,8 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
                     bankName={bankName}
                     accountNumber={accountNumber}
                     accountName={accountName}
-                    amount={numAmount}
-                    description={description}
+                    amount={qrAmount || numAmount}
+                    description={qrDescription}
                     isExpired={isExpired}
                     isPaid={isPaid}
                   >
@@ -206,8 +221,9 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
                       <div className="flex h-[210px] w-[210px] items-center justify-center rounded-xl bg-neutral-100 text-xs text-neutral-500">
                         Không thể tải QR
                       </div>
-                    ) : (
+                    ) : vietQrImageUrl ? (
                       <Image
+                        key={vietQrImageUrl} // Key to force remount only when URL actually changes
                         src={vietQrImageUrl}
                         alt="VietQR Code - Nạp tiền"
                         width={210}
@@ -215,8 +231,9 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
                         className="h-[210px] w-[210px]"
                         onError={() => setQrImageError(true)}
                         unoptimized
+                        priority
                       />
-                    )}
+                    ) : null}
                   </VietQrFrame>
                 </div>
 
@@ -243,8 +260,8 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
                       variant="outline"
                       onClick={async () => {
                         const qrData = `VPBank\nSố TK: ${accountNumber}\nChủ TK: ${accountName}\nSố tiền: ${formatVnd(
-                          numAmount
-                        )}\nNội dung: ${description}`;
+                          qrAmount
+                        )}\nNội dung: ${qrDescription}`;
                         await navigator.clipboard.writeText(qrData);
                       }}
                       className="flex-1"
@@ -257,7 +274,10 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
                       <Button
                         variant="secondary"
                         onClick={() => {
-                          setQrGeneratedAt(Date.now());
+                          const timestamp = Date.now();
+                          const newDescription = `Nap tien vao vi ${timestamp}`;
+                          setQrGeneratedAt(timestamp);
+                          setQrDescription(newDescription);
                           setPaymentStatus("pending");
                           setQrImageError(false);
                         }}
