@@ -131,7 +131,7 @@ export function Navbar({ cartCount = 0, onCartClick }: NavbarProps) {
                   <SearchIcon className="pointer-events-none absolute left-7 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     placeholder="Tìm kiếm game key, bản quyền, thẻ quà tặng…"
-                    className="h-12 pl-11 pr-12 w-full"
+                    className="h-12 pl-11 pr-12 w-full text-base"
                     autoFocus
                     onKeyDown={(e) => {
                       if (e.key === "Escape") {
