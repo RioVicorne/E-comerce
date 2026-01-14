@@ -102,8 +102,19 @@ export default function HomePage() {
 
       <PaymentModal
         open={checkoutOpen}
-        onOpenChange={setCheckoutOpen}
+        onOpenChange={(open) => {
+          setCheckoutOpen(open);
+          if (!open) {
+            // Reset order when modal closes
+            setActiveOrder(null);
+          }
+        }}
         order={activeOrder}
+        onPaymentSuccess={() => {
+          // Clear cart after successful payment
+          setCart([]);
+          setCartOpen(false);
+        }}
       />
     </div>
   );

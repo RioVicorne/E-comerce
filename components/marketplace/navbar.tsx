@@ -2,7 +2,18 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { LogIn, ShoppingCart, Menu, X, Search } from "lucide-react";
+import {
+  User,
+  ShoppingCart,
+  Menu,
+  X,
+  Search,
+  Wallet,
+  Package,
+  History,
+  LogOut,
+  CreditCard,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -15,7 +26,16 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { iconMap } from "@/components/marketplace/icons";
+import { useWalletStore } from "@/lib/wallet-store";
+import { TopUpModal } from "./topup-modal";
 
 type NavbarProps = {
   cartCount?: number;
@@ -26,6 +46,9 @@ export function Navbar({ cartCount = 0, onCartClick }: NavbarProps) {
   const SearchIcon = iconMap.search;
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [searchExpanded, setSearchExpanded] = React.useState(false);
+  const [topUpOpen, setTopUpOpen] = React.useState(false);
+  const balance = useWalletStore((state) => state.balance);
+  const transactions = useWalletStore((state) => state.transactions);
 
   const navItems = [
     { href: "#news", label: "Tin tức Game" },
@@ -168,6 +191,25 @@ export function Navbar({ cartCount = 0, onCartClick }: NavbarProps) {
               </Button>
             )}
 
+            {/* Wallet Balance - Desktop */}
+            <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10">
+              <Wallet className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-semibold text-foreground">
+                Ví:
+              </span>
+              <span className="text-sm font-bold text-violet-300">
+                {formatVnd(balance)}
+              </span>
+            </div>
+
+            {/* Wallet Balance - Mobile (compact) */}
+            <div className="md:hidden flex items-center gap-1 px-2 py-1.5 rounded-lg bg-white/5">
+              <Wallet className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-xs font-bold text-violet-300">
+                {formatVndCompact(balance)}
+              </span>
+            </div>
+
             <Button
               variant="secondary"
               size="icon"
@@ -186,17 +228,122 @@ export function Navbar({ cartCount = 0, onCartClick }: NavbarProps) {
               ) : null}
             </Button>
 
-            <Button
-              variant="secondary"
-              size="icon"
-              aria-label="Đăng nhập / Đăng ký"
-              className="hidden min-h-[44px] min-w-[44px] sm:inline-flex"
-            >
-              <LogIn className="h-4 w-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  aria-label="Hồ sơ / Tài khoản"
+                  className="hidden min-h-[44px] min-w-[44px] sm:inline-flex"
+                >
+                  <User className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {/* User Info Section */}
+                <div className="px-3 py-2 border-b border-white/10">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-violet-500/40 via-fuchsia-500/25 to-cyan-400/25 flex items-center justify-center">
+                      <User className="h-4 w-4 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-foreground truncate">
+                        Khách hàng
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {formatVnd(balance)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <DropdownMenuItem
+                  onClick={() => {
+                    // Navigate to profile page (to be implemented)
+                    console.log("Xem hồ sơ");
+                  }}
+                  className="cursor-pointer"
+                >
+                  <User className="h-4 w-4" />
+                  <span>Hồ sơ của tôi</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => {
+                    // Navigate to orders page (to be implemented)
+                    console.log("Đơn hàng của tôi");
+                  }}
+                  className="cursor-pointer"
+                >
+                  <Package className="h-4 w-4" />
+                  <span>Đơn hàng của tôi</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => {
+                    // Navigate to transaction history (to be implemented)
+                    console.log("Lịch sử giao dịch");
+                  }}
+                  className="cursor-pointer"
+                >
+                  <History className="h-4 w-4" />
+                  <span>Lịch sử giao dịch</span>
+                  {transactions.length > 0 && (
+                    <Badge
+                      variant="neon"
+                      className="ml-auto text-[10px] px-1.5 py-0"
+                    >
+                      {transactions.length}
+                    </Badge>
+                  )}
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator className="bg-white/10" />
+
+                <DropdownMenuItem
+                  onClick={() => setTopUpOpen(true)}
+                  className="cursor-pointer"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  <span>Nạp tiền vào ví</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator className="bg-white/10" />
+
+                <DropdownMenuItem
+                  onClick={() => {
+                    // Logout functionality (to be implemented)
+                    console.log("Đăng xuất");
+                  }}
+                  className="cursor-pointer text-red-400 focus:text-red-400"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Đăng xuất</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
+
+      <TopUpModal open={topUpOpen} onOpenChange={setTopUpOpen} />
     </header>
   );
+}
+
+function formatVnd(v: number) {
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    maximumFractionDigits: 0,
+  }).format(v);
+}
+
+function formatVndCompact(v: number) {
+  if (v >= 1000000) {
+    return `${(v / 1000000).toFixed(1)}Mđ`;
+  } else if (v >= 1000) {
+    return `${(v / 1000).toFixed(0)}kđ`;
+  }
+  return `${v}đ`;
 }

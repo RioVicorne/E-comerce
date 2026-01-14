@@ -5,6 +5,7 @@ export type User = {
   id: string;
   username: string;
   role: "admin" | "user";
+  balance?: number; // Wallet balance in VND
 };
 
 const ADMIN_CREDENTIALS = {
