@@ -157,7 +157,7 @@ export function PaymentModal({ open, onOpenChange, order }: PaymentModalProps) {
         </DialogHeader>
 
         <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-          <div className="space-y-4 min-w-0 overflow-hidden">
+          <div className="space-y-4 min-w-0 overflow-hidden w-full">
             <Tabs defaultValue="qr">
               <TabsList className="w-full justify-start min-w-0 overflow-x-auto">
                 <TabsTrigger value="qr" className="gap-2 shrink-0">
@@ -194,10 +194,11 @@ export function PaymentModal({ open, onOpenChange, order }: PaymentModalProps) {
                     return (
                       <div
                         key={itemPayment.itemId}
-                        className="grid gap-4 md:grid-cols-[280px_1fr] rounded-2xl bg-white/5 p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.10)] overflow-hidden"
+                        className="grid gap-4 md:grid-cols-[280px_1fr] rounded-2xl bg-white/5 p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.10)] overflow-hidden w-full"
                       >
-                        <div className="flex justify-center min-w-0">
-                          <VietQrFrame
+                        <div className="flex justify-center items-start w-full min-w-0">
+                          <div className="w-full max-w-[280px]">
+                            <VietQrFrame
                             bankName={bankName}
                             accountNumber={accountNumber}
                             accountName={accountName}
@@ -228,6 +229,7 @@ export function PaymentModal({ open, onOpenChange, order }: PaymentModalProps) {
                               />
                             )}
                           </VietQrFrame>
+                          </div>
                         </div>
 
                         <div className="space-y-3 min-w-0">
