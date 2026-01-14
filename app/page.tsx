@@ -19,7 +19,6 @@ import {
   type CheckoutOrder,
 } from "@/components/marketplace/payment-modal";
 import { CartSidebar } from "@/components/marketplace/cart-sidebar";
-import { AddToCartConfirm } from "@/components/marketplace/add-to-cart-confirm";
 
 export default function HomePage() {
   const [cart, setCart] = React.useState<Array<{ product: Product; qty: number }>>(
@@ -28,8 +27,6 @@ export default function HomePage() {
   const [cartOpen, setCartOpen] = React.useState(false);
   const [checkoutOpen, setCheckoutOpen] = React.useState(false);
   const [activeOrder, setActiveOrder] = React.useState<CheckoutOrder | null>(null);
-  const [addToCartConfirmOpen, setAddToCartConfirmOpen] = React.useState(false);
-  const [addedProduct, setAddedProduct] = React.useState<Product | null>(null);
 
   const cartCount = cart.reduce((sum, i) => sum + i.qty, 0);
 
@@ -52,9 +49,6 @@ export default function HomePage() {
       copy[idx] = { ...copy[idx], qty: copy[idx].qty + 1 };
       return copy;
     });
-    // Show confirmation popup
-    setAddedProduct(product);
-    setAddToCartConfirmOpen(true);
   }
 
   function updateQuantity(productId: string, qty: number) {
@@ -104,18 +98,6 @@ export default function HomePage() {
         onUpdateQuantity={updateQuantity}
         onRemoveItem={removeItem}
         onCheckout={handleCheckout}
-      />
-
-      <AddToCartConfirm
-        open={addToCartConfirmOpen}
-        onOpenChange={setAddToCartConfirmOpen}
-        product={addedProduct}
-        onViewCart={() => setCartOpen(true)}
-        onCheckout={() => {
-          if (addedProduct) {
-            openCheckoutWith([{ product: addedProduct, qty: 1 }]);
-          }
-        }}
       />
 
       <PaymentModal

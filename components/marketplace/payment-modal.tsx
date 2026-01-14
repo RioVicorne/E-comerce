@@ -3,9 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import {
-  CheckCircle2,
   Copy,
-  Loader2,
   QrCode,
   ShieldCheck,
   Clock,
@@ -61,7 +59,6 @@ export function PaymentModal({ open, onOpenChange, order }: PaymentModalProps) {
   const [itemPayments, setItemPayments] = React.useState<ItemPaymentStatus[]>(
     []
   );
-  const [checking, setChecking] = React.useState(false);
   const [qrImageErrors, setQrImageErrors] = React.useState<
     Record<string, boolean>
   >({});
@@ -138,35 +135,6 @@ export function PaymentModal({ open, onOpenChange, order }: PaymentModalProps) {
     };
   }, [open, order, checkPayments]);
 
-  // Manual payment check
-  // In production, this would call your payment API to verify transaction status
-  const handleManualCheck = React.useCallback(async () => {
-    setChecking(true);
-    await wait(1500);
-
-    setItemPayments((current) =>
-      current.map((item) => {
-        if (item.status === "idle" || item.status === "pending") {
-          // In production: Call API to check payment status
-          // For demo: Only mark as pending (not paid) unless explicitly confirmed
-          // Change Math.random() > 0.3 to false to disable auto-payment simulation
-          const shouldMarkAsPaid = false; // Set to true only when payment is actually confirmed
-
-          if (shouldMarkAsPaid) {
-            return { ...item, status: "paid" };
-          } else {
-            // Keep as pending or idle - payment not yet confirmed
-            return item.status === "idle"
-              ? { ...item, status: "pending" }
-              : item;
-          }
-        }
-        return item;
-      })
-    );
-
-    setChecking(false);
-  }, []);
 
   if (!order) return null;
 
@@ -174,37 +142,9 @@ export function PaymentModal({ open, onOpenChange, order }: PaymentModalProps) {
   const accountNumber = "1105200789";
   const accountName = "TRAN DINH KHOA";
 
-  const allPaid =
-    itemPayments.length > 0 &&
-    itemPayments.every((item) => item.status === "paid");
-  const hasExpired = itemPayments.some((item) => item.status === "expired");
-  const pendingCount = itemPayments.filter(
-    (item) => item.status === "pending"
-  ).length;
-  const paidCount = itemPayments.filter(
-    (item) => item.status === "paid"
-  ).length;
-
-  const overallStatus = allPaid
-    ? "paid"
-    : hasExpired
-    ? "expired"
-    : pendingCount > 0
-    ? "pending"
-    : "idle";
-
-  const statusLabel =
-    overallStatus === "paid"
-      ? `Đã thanh toán (${paidCount}/${itemPayments.length})`
-      : overallStatus === "expired"
-      ? "QR đã hết hạn"
-      : overallStatus === "pending"
-      ? `Đang chờ (${pendingCount}/${itemPayments.length})`
-      : "Chưa thanh toán";
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-violet-300" />
@@ -217,14 +157,14 @@ export function PaymentModal({ open, onOpenChange, order }: PaymentModalProps) {
         </DialogHeader>
 
         <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-          <div className="space-y-4 min-w-0">
+          <div className="space-y-4 min-w-0 overflow-hidden">
             <Tabs defaultValue="qr">
-              <TabsList className="w-full justify-start">
-                <TabsTrigger value="qr" className="gap-2">
+              <TabsList className="w-full justify-start min-w-0 overflow-x-auto">
+                <TabsTrigger value="qr" className="gap-2 shrink-0">
                   <QrCode className="h-4 w-4" />
                   Thanh toán qua QR
                 </TabsTrigger>
-                <TabsTrigger value="card" className="gap-2">
+                <TabsTrigger value="card" className="gap-2 shrink-0">
                   Thẻ (sắp có)
                 </TabsTrigger>
               </TabsList>
@@ -254,9 +194,9 @@ export function PaymentModal({ open, onOpenChange, order }: PaymentModalProps) {
                     return (
                       <div
                         key={itemPayment.itemId}
-                        className="grid gap-4 md:grid-cols-[280px_1fr] rounded-2xl bg-white/5 p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.10)]"
+                        className="grid gap-4 md:grid-cols-[280px_1fr] rounded-2xl bg-white/5 p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.10)] overflow-hidden"
                       >
-                        <div className="flex justify-center md:justify-start">
+                        <div className="flex justify-center min-w-0">
                           <VietQrFrame
                             bankName={bankName}
                             accountNumber={accountNumber}
@@ -380,46 +320,6 @@ export function PaymentModal({ open, onOpenChange, order }: PaymentModalProps) {
                   })}
                 </div>
 
-                <div className="rounded-2xl bg-white/5 p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.10)] overflow-hidden">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="text-sm font-semibold text-foreground">
-                      Tổng trạng thái
-                    </div>
-                    <Badge
-                      variant={overallStatus === "paid" ? "neon" : "default"}
-                    >
-                      {statusLabel}
-                    </Badge>
-                  </div>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {allPaid
-                      ? "Tất cả các mục đã được thanh toán thành công!"
-                      : "Quét mã QR bằng ứng dụng ngân hàng để thanh toán. Sau đó nhấp 'Kiểm tra thanh toán ngay' để xác nhận."}
-                  </p>
-
-                  {!allPaid && (
-                    <div className="mt-4">
-                      <Button
-                        onClick={handleManualCheck}
-                        disabled={checking}
-                        className="w-full sm:w-auto"
-                      >
-                        {checking ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Đang kiểm tra…
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle2 className="h-4 w-4" />
-                            Kiểm tra thanh toán ngay
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
                 <div className="rounded-2xl bg-white/5 p-4 text-sm text-muted-foreground shadow-[inset_0_0_0_1px_rgba(255,255,255,0.10)]">
                   <div className="font-semibold text-foreground">
                     Mẹo để thanh toán QR suôn sẻ
@@ -531,7 +431,7 @@ function VietQrFrame({
   return (
     <div
       className={cn(
-        "rounded-2xl bg-white p-4 text-black shadow-[0_30px_120px_-70px_rgba(34,211,238,0.75)]",
+        "rounded-2xl bg-white p-4 text-black shadow-[0_30px_120px_-70px_rgba(34,211,238,0.75)] w-full max-w-[280px]",
         isExpired && "opacity-60",
         isPaid && "ring-2 ring-green-500"
       )}
@@ -552,18 +452,18 @@ function VietQrFrame({
         {children}
       </div>
 
-      <div className="mt-4 space-y-2 text-sm">
+      <div className="mt-4 space-y-2 text-sm min-w-0">
         <Row label="Tài khoản" value={`${accountName} • ${accountNumber}`} />
         <Row label="Số tiền" value={formatVnd(amount)} strong />
         <Row
           label="Nội dung"
           value={description}
-          valueClassName="font-mono text-[12px]"
+          valueClassName="font-mono text-[12px] break-words"
         />
         <Row
           label="Mã mục"
           value={itemId}
-          valueClassName="font-mono text-[11px] text-neutral-600"
+          valueClassName="font-mono text-[11px] text-neutral-600 break-words"
         />
       </div>
     </div>
@@ -582,11 +482,11 @@ function Row({
   valueClassName?: string;
 }) {
   return (
-    <div className="flex items-start justify-between gap-3">
-      <div className="text-xs font-semibold text-neutral-500">{label}</div>
+    <div className="flex items-start justify-between gap-3 min-w-0">
+      <div className="text-xs font-semibold text-neutral-500 shrink-0">{label}</div>
       <div
         className={cn(
-          "text-right text-sm",
+          "text-right text-sm min-w-0 break-words",
           strong && "font-extrabold",
           valueClassName
         )}
@@ -603,8 +503,4 @@ function formatVnd(v: number) {
     currency: "VND",
     maximumFractionDigits: 0,
   }).format(v);
-}
-
-function wait(ms: number) {
-  return new Promise<void>((r) => setTimeout(r, ms));
 }
