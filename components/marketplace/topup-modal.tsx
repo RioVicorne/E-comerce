@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { Copy, Wallet, QrCode, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Copy, Wallet, QrCode, AlertCircle, CheckCircle2, RefreshCw } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -17,15 +17,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useWalletStore } from "@/lib/wallet-store";
+import { confirmPaymentByDescription } from "@/lib/payment-utils";
 
 type TopUpModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
 
+
+
 const PRESET_AMOUNTS = [50000, 100000, 200000, 500000, 1000000];
 
 const QR_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
+const PAYMENT_CHECK_INTERVAL_MS = 5000; // Check every 5 seconds
 
 export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
   const [amount, setAmount] = React.useState<string>("");
@@ -38,9 +42,73 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
   const [qrImageError, setQrImageError] = React.useState(false);
   const [qrDescription, setQrDescription] = React.useState<string>("");
   const [qrAmount, setQrAmount] = React.useState<number>(0);
+  const [transactionId, setTransactionId] = React.useState<string>("");
+  const [isCheckingPayment, setIsCheckingPayment] = React.useState(false);
   const timerIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
+  const paymentCheckIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const deposit = useWalletStore((state) => state.deposit);
+
+  // Function to check payment status
+  const checkPayment = React.useCallback(async () => {
+    if (paymentStatus !== "pending" || !transactionId || !qrDescription) {
+      return;
+    }
+
+    setIsCheckingPayment(true);
+    
+    try {
+      // Call API to check payment status
+      const response = await fetch(
+        `/api/payments/check?transactionId=${encodeURIComponent(transactionId)}&description=${encodeURIComponent(qrDescription)}`
+      );
+      
+      if (!response.ok) {
+        throw new Error("Failed to check payment");
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.confirmed) {
+        // Payment confirmed!
+        deposit(qrAmount, transactionId);
+        setPaymentStatus("completed");
+        
+        // Auto close after 2 seconds
+        setTimeout(() => {
+          onOpenChange(false);
+        }, 2000);
+      } else if (data.payment?.isExpired) {
+        // Payment expired
+        setPaymentStatus("expired");
+      }
+    } catch (error) {
+      console.error("Error checking payment:", error);
+      // Fallback to localStorage check (for backward compatibility)
+      try {
+        const confirmedPayments = JSON.parse(
+          localStorage.getItem("confirmedPayments") || "[]"
+        );
+        
+        const isConfirmed = confirmedPayments.some(
+          (p: { transactionId: string; description: string }) =>
+            p.transactionId === transactionId || p.description === qrDescription
+        );
+
+        if (isConfirmed) {
+          deposit(qrAmount, transactionId);
+          setPaymentStatus("completed");
+          setTimeout(() => {
+            onOpenChange(false);
+          }, 2000);
+        }
+      } catch (fallbackError) {
+        console.error("Fallback check also failed:", fallbackError);
+      }
+    } finally {
+      setIsCheckingPayment(false);
+    }
+  }, [paymentStatus, transactionId, qrDescription, qrAmount, deposit, onOpenChange]);
 
   // Timer for QR expiration
   React.useEffect(() => {
@@ -60,6 +128,49 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
     };
   }, [qrGenerated, qrGeneratedAt, paymentStatus]);
 
+  // Auto-polling for payment status
+  React.useEffect(() => {
+    if (qrGenerated && paymentStatus === "pending" && transactionId) {
+      // Check immediately
+      checkPayment();
+      
+      // Then check every 5 seconds
+      paymentCheckIntervalRef.current = setInterval(() => {
+        checkPayment();
+      }, PAYMENT_CHECK_INTERVAL_MS);
+    }
+    
+    return () => {
+      if (paymentCheckIntervalRef.current) {
+        clearInterval(paymentCheckIntervalRef.current);
+      }
+    };
+  }, [qrGenerated, paymentStatus, transactionId, checkPayment]);
+
+  // Listen for payment confirmation events (for backward compatibility)
+  React.useEffect(() => {
+    if (!qrGenerated || paymentStatus !== "pending" || !qrDescription) {
+      return;
+    }
+
+    const handlePaymentConfirmed = (event: CustomEvent) => {
+      const identifier = event.detail;
+      if (
+        identifier.transactionId === transactionId ||
+        identifier.description === qrDescription
+      ) {
+        // Payment was confirmed, check again
+        checkPayment();
+      }
+    };
+
+    window.addEventListener("paymentConfirmed", handlePaymentConfirmed as EventListener);
+
+    return () => {
+      window.removeEventListener("paymentConfirmed", handlePaymentConfirmed as EventListener);
+    };
+  }, [qrGenerated, paymentStatus, qrDescription, transactionId, checkPayment]);
+
   // Reset when modal closes
   React.useEffect(() => {
     if (!open) {
@@ -70,8 +181,13 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
       setQrImageError(false);
       setQrDescription("");
       setQrAmount(0);
+      setTransactionId("");
+      setIsCheckingPayment(false);
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
+      }
+      if (paymentCheckIntervalRef.current) {
+        clearInterval(paymentCheckIntervalRef.current);
       }
     }
   }, [open]);
@@ -80,20 +196,77 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
     setAmount(presetAmount.toString());
   };
 
-  const handleGenerateQR = () => {
+  const handleGenerateQR = async () => {
     const numAmount = parseFloat(amount);
     if (numAmount <= 0 || isNaN(numAmount)) {
       return;
     }
-    const timestamp = Date.now();
-    const description = `Nap tien vao vi ${timestamp}`;
-    
-    setQrGenerated(true);
-    setQrGeneratedAt(timestamp);
-    setQrDescription(description);
-    setQrAmount(numAmount);
-    setPaymentStatus("pending");
-    setQrImageError(false);
+
+    try {
+      const timestamp = Date.now();
+      const description = `Nap tien vao vi ${timestamp}`;
+      
+      // Call API to create payment
+      const response = await fetch("/api/payments/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount: numAmount,
+          description,
+          bankName: "VPBank",
+          accountNumber: "1105200789",
+          accountName: "TRAN DINH KHOA",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create payment");
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.payment) {
+        const payment = data.payment;
+        
+        setQrGenerated(true);
+        setQrGeneratedAt(new Date(payment.qrGeneratedAt).getTime());
+        setQrDescription(payment.description);
+        setQrAmount(payment.amount);
+        setTransactionId(payment.transactionId);
+        setPaymentStatus("pending");
+        setQrImageError(false);
+      } else {
+        throw new Error("Invalid response from server");
+      }
+    } catch (error) {
+      console.error("Error creating payment:", error);
+      // Fallback: use local generation (for backward compatibility)
+      const timestamp = Date.now();
+      const description = `Nap tien vao vi ${timestamp}`;
+      const txId = `deposit-${timestamp}`;
+      
+      setQrGenerated(true);
+      setQrGeneratedAt(timestamp);
+      setQrDescription(description);
+      setQrAmount(numAmount);
+      setTransactionId(txId);
+      setPaymentStatus("pending");
+      setQrImageError(false);
+      
+      // Store in localStorage as fallback
+      const pendingTransactions = JSON.parse(
+        localStorage.getItem("pendingTransactions") || "[]"
+      );
+      pendingTransactions.push({
+        transactionId: txId,
+        description,
+        amount: numAmount,
+        createdAt: timestamp,
+      });
+      localStorage.setItem("pendingTransactions", JSON.stringify(pendingTransactions));
+    }
   };
 
   const handleSimulatePayment = () => {
@@ -270,16 +443,76 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
                       Sao chép thông tin
                     </Button>
 
+                    {!isPaid && !isExpired && (
+                      <Button
+                        variant="default"
+                        onClick={checkPayment}
+                        disabled={isCheckingPayment}
+                        className="flex-1"
+                      >
+                        {isCheckingPayment ? (
+                          <>
+                            <RefreshCw className="h-3 w-3 mr-2 animate-spin" />
+                            Đang kiểm tra...
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="h-3 w-3 mr-2" />
+                            Kiểm tra thanh toán
+                          </>
+                        )}
+                      </Button>
+                    )}
+
                     {isExpired && (
                       <Button
                         variant="secondary"
-                        onClick={() => {
-                          const timestamp = Date.now();
-                          const newDescription = `Nap tien vao vi ${timestamp}`;
-                          setQrGeneratedAt(timestamp);
-                          setQrDescription(newDescription);
-                          setPaymentStatus("pending");
-                          setQrImageError(false);
+                        onClick={async () => {
+                          try {
+                            const timestamp = Date.now();
+                            const newDescription = `Nap tien vao vi ${timestamp}`;
+                            
+                            // Call API to create new payment
+                            const response = await fetch("/api/payments/create", {
+                              method: "POST",
+                              headers: {
+                                "Content-Type": "application/json",
+                              },
+                              body: JSON.stringify({
+                                amount: qrAmount,
+                                description: newDescription,
+                                bankName: "VPBank",
+                                accountNumber: "1105200789",
+                                accountName: "TRAN DINH KHOA",
+                              }),
+                            });
+
+                            if (!response.ok) {
+                              throw new Error("Failed to create payment");
+                            }
+
+                            const data = await response.json();
+                            
+                            if (data.success && data.payment) {
+                              const payment = data.payment;
+                              setQrGeneratedAt(new Date(payment.qrGeneratedAt).getTime());
+                              setQrDescription(payment.description);
+                              setTransactionId(payment.transactionId);
+                              setPaymentStatus("pending");
+                              setQrImageError(false);
+                            }
+                          } catch (error) {
+                            console.error("Error creating new payment:", error);
+                            // Fallback to local generation
+                            const timestamp = Date.now();
+                            const newDescription = `Nap tien vao vi ${timestamp}`;
+                            const txId = `deposit-${timestamp}`;
+                            setQrGeneratedAt(timestamp);
+                            setQrDescription(newDescription);
+                            setTransactionId(txId);
+                            setPaymentStatus("pending");
+                            setQrImageError(false);
+                          }
                         }}
                         className="flex-1"
                       >
@@ -308,9 +541,26 @@ export function TopUpModal({ open, onOpenChange }: TopUpModalProps) {
                     <li>Quét mã QR bằng ứng dụng ngân hàng của bạn</li>
                     <li>Xác nhận số tiền và nội dung chuyển khoản</li>
                     <li>Hoàn tất thanh toán trong vòng 10 phút</li>
-                    <li>Sau khi thanh toán, số dư sẽ được cập nhật tự động</li>
+                    <li>Sau khi chuyển tiền, nhấn "Kiểm tra thanh toán" hoặc đợi hệ thống tự động kiểm tra</li>
+                    <li>Số dư sẽ được cập nhật tự động sau khi thanh toán được xác nhận</li>
                   </ul>
                 </div>
+                
+                {!isPaid && !isExpired && (
+                  <div className="rounded-2xl bg-blue-500/10 border border-blue-500/20 p-4">
+                    <div className="flex items-start gap-3">
+                      <RefreshCw className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
+                      <div className="flex-1 space-y-1">
+                        <div className="text-sm font-semibold text-blue-400">
+                          Đang tự động kiểm tra thanh toán
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Hệ thống sẽ tự động kiểm tra mỗi 5 giây. Bạn cũng có thể nhấn nút "Kiểm tra thanh toán" để kiểm tra ngay.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>

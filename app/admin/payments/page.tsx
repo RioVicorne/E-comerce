@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Search, CheckCircle2, Clock, XCircle, QrCode } from "lucide-react";
+import { Search, CheckCircle2, Clock, XCircle, QrCode, RefreshCw, Copy } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,65 +9,119 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// Mock payments data
-const mockPayments = [
-  {
-    id: "PAY-001",
-    orderId: "KW-20260113-561",
-    itemId: "p-1-0",
-    amount: 95000,
-    status: "pending",
-    qrGeneratedAt: "2026-01-13 14:30",
-    expiresAt: "2026-01-13 14:40",
-    bank: "VPBank",
-    accountNumber: "1105200789",
-  },
-  {
-    id: "PAY-002",
-    orderId: "KW-20260113-560",
-    itemId: "p-2-0",
-    amount: 189000,
-    status: "paid",
-    qrGeneratedAt: "2026-01-13 13:15",
-    paidAt: "2026-01-13 13:18",
-    bank: "VPBank",
-    accountNumber: "1105200789",
-  },
-  {
-    id: "PAY-003",
-    orderId: "KW-20260113-559",
-    itemId: "p-4-0",
-    amount: 99000,
-    status: "paid",
-    qrGeneratedAt: "2026-01-13 12:00",
-    paidAt: "2026-01-13 12:05",
-    bank: "VPBank",
-    accountNumber: "1105200789",
-  },
-  {
-    id: "PAY-004",
-    orderId: "KW-20260113-558",
-    itemId: "p-6-0",
-    amount: 499000,
-    status: "expired",
-    qrGeneratedAt: "2026-01-13 11:30",
-    expiresAt: "2026-01-13 11:40",
-    bank: "VPBank",
-    accountNumber: "1105200789",
-  },
-];
+type Payment = {
+  id: string;
+  transactionId: string;
+  description: string;
+  amount: number;
+  status: "pending" | "completed" | "expired" | "failed";
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+  userId: string | null;
+  qrGeneratedAt: string;
+  expiresAt: string;
+  paidAt: string | null;
+  confirmedBy: string | null;
+  createdAt: string;
+};
 
 export default function AdminPayments() {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
+  const [payments, setPayments] = React.useState<Payment[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [confirmingId, setConfirmingId] = React.useState<string | null>(null);
 
-  const filteredPayments = mockPayments.filter((payment) => {
+  // Fetch payments from API
+  const fetchPayments = React.useCallback(async () => {
+    try {
+      setLoading(true);
+      const status = statusFilter === "all" ? "" : statusFilter;
+      const response = await fetch(`/api/payments/list?status=${status}&limit=100`);
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch payments");
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setPayments(data.payments);
+      }
+    } catch (error) {
+      console.error("Error fetching payments:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [statusFilter]);
+
+  // Fetch on mount and when filter changes
+  React.useEffect(() => {
+    fetchPayments();
+  }, [fetchPayments]);
+
+  // Auto refresh every 10 seconds
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      fetchPayments();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [fetchPayments]);
+
+  // Handle confirm payment
+  const handleConfirmPayment = async (payment: Payment) => {
+    if (!confirm("Bạn có chắc chắn muốn xác nhận thanh toán này?")) {
+      return;
+    }
+
+    try {
+      setConfirmingId(payment.id);
+      const response = await fetch("/api/payments/confirm", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          transactionId: payment.transactionId,
+          description: payment.description,
+          confirmedBy: "admin",
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        alert(error.error || "Lỗi khi xác nhận thanh toán");
+        return;
+      }
+
+      // Refresh list
+      await fetchPayments();
+      alert("Đã xác nhận thanh toán thành công!");
+    } catch (error) {
+      console.error("Error confirming payment:", error);
+      alert("Lỗi khi xác nhận thanh toán");
+    } finally {
+      setConfirmingId(null);
+    }
+  };
+
+  // Copy description to clipboard
+  const handleCopyDescription = async (description: string) => {
+    try {
+      await navigator.clipboard.writeText(description);
+      alert("Đã sao chép nội dung chuyển khoản!");
+    } catch (error) {
+      console.error("Error copying:", error);
+    }
+  };
+
+  const filteredPayments = payments.filter((payment) => {
     const matchesSearch =
-      payment.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      payment.orderId.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" || payment.status === statusFilter;
-    return matchesSearch && matchesStatus;
+      payment.transactionId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      payment.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      payment.id.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
   });
 
   const formatVnd = (v: number) => {
@@ -80,7 +134,7 @@ export default function AdminPayments() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "paid":
+      case "completed":
         return (
           <Badge variant="neon" className="gap-1">
             <CheckCircle2 className="h-3 w-3" />
@@ -99,6 +153,13 @@ export default function AdminPayments() {
           <Badge variant="outline" className="gap-1">
             <XCircle className="h-3 w-3" />
             Hết hạn
+          </Badge>
+        );
+      case "failed":
+        return (
+          <Badge variant="outline" className="gap-1 text-red-400">
+            <XCircle className="h-3 w-3" />
+            Thất bại
           </Badge>
         );
       default:
@@ -128,8 +189,8 @@ export default function AdminPayments() {
             </div>
             <div className="mt-2 text-2xl font-extrabold text-foreground">
               {formatVnd(
-                mockPayments
-                  .filter((p) => p.status === "paid")
+                payments
+                  .filter((p) => p.status === "completed")
                   .reduce((sum, p) => sum + p.amount, 0)
               )}
             </div>
@@ -141,7 +202,7 @@ export default function AdminPayments() {
               Đang chờ
             </div>
             <div className="mt-2 text-2xl font-extrabold text-foreground">
-              {mockPayments.filter((p) => p.status === "pending").length}
+              {payments.filter((p) => p.status === "pending").length}
             </div>
           </CardContent>
         </Card>
@@ -151,7 +212,7 @@ export default function AdminPayments() {
               Đã thanh toán
             </div>
             <div className="mt-2 text-2xl font-extrabold text-foreground">
-              {mockPayments.filter((p) => p.status === "paid").length}
+              {payments.filter((p) => p.status === "completed").length}
             </div>
           </CardContent>
         </Card>
@@ -162,12 +223,20 @@ export default function AdminPayments() {
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Tìm kiếm thanh toán..."
+            placeholder="Tìm kiếm theo ID, transaction ID hoặc nội dung..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-11"
           />
         </div>
+        <Button
+          variant="outline"
+          onClick={fetchPayments}
+          disabled={loading}
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+          Làm mới
+        </Button>
       </div>
 
       {/* Payments List */}
@@ -175,62 +244,102 @@ export default function AdminPayments() {
         <TabsList>
           <TabsTrigger value="all">Tất cả</TabsTrigger>
           <TabsTrigger value="pending">Chờ thanh toán</TabsTrigger>
-          <TabsTrigger value="paid">Đã thanh toán</TabsTrigger>
+          <TabsTrigger value="completed">Đã thanh toán</TabsTrigger>
           <TabsTrigger value="expired">Hết hạn</TabsTrigger>
         </TabsList>
 
         <TabsContent value={statusFilter} className="mt-4">
-          <div className="space-y-4">
-            {filteredPayments.map((payment) => (
-              <Card key={payment.id}>
-                <CardContent className="p-6">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="space-y-2 flex-1">
-                      <div className="flex items-center gap-3">
-                        <div className="font-extrabold text-foreground">
-                          {payment.id}
-                        </div>
-                        {getStatusBadge(payment.status)}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Đơn hàng: {payment.orderId} • Mục: {payment.itemId}
-                      </div>
-                      <div className="text-lg font-extrabold text-foreground">
-                        {formatVnd(payment.amount)}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {payment.bank} • {payment.accountNumber}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        QR tạo: {payment.qrGeneratedAt}
-                        {payment.paidAt && ` • Thanh toán: ${payment.paidAt}`}
-                        {payment.expiresAt && ` • Hết hạn: ${payment.expiresAt}`}
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="secondary" size="sm">
-                        <QrCode className="h-3 w-3" />
-                        Xem QR
-                      </Button>
-                      {payment.status === "pending" && (
-                        <Button size="sm">Kiểm tra</Button>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {filteredPayments.length === 0 && (
+          {loading ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <QrCode className="h-12 w-12 text-muted-foreground" />
+                <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
                 <p className="mt-4 text-sm text-muted-foreground">
-                  Không có giao dịch nào
+                  Đang tải...
                 </p>
               </CardContent>
             </Card>
+          ) : (
+            <>
+              <div className="space-y-4">
+                {filteredPayments.map((payment) => (
+                  <Card key={payment.id}>
+                    <CardContent className="p-6">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div className="space-y-2 flex-1">
+                          <div className="flex items-center gap-3">
+                            <div className="font-extrabold text-foreground">
+                              {payment.transactionId}
+                            </div>
+                            {getStatusBadge(payment.status)}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            ID: {payment.id}
+                            {payment.userId && ` • User: ${payment.userId}`}
+                          </div>
+                          <div className="text-lg font-extrabold text-foreground">
+                            {formatVnd(payment.amount)}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {payment.bankName} • {payment.accountNumber} • {payment.accountName}
+                          </div>
+                          <div className="text-xs text-muted-foreground font-mono break-all">
+                            Nội dung: {payment.description}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            QR tạo: {new Date(payment.qrGeneratedAt).toLocaleString("vi-VN")}
+                            {payment.paidAt && ` • Thanh toán: ${new Date(payment.paidAt).toLocaleString("vi-VN")}`}
+                            {payment.confirmedBy && ` • Xác nhận bởi: ${payment.confirmedBy}`}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Hết hạn: {new Date(payment.expiresAt).toLocaleString("vi-VN")}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCopyDescription(payment.description)}
+                          >
+                            <Copy className="h-3 w-3 mr-1" />
+                            Copy
+                          </Button>
+                          {payment.status === "pending" && (
+                            <Button
+                              size="sm"
+                              onClick={() => handleConfirmPayment(payment)}
+                              disabled={confirmingId === payment.id}
+                            >
+                              {confirmingId === payment.id ? (
+                                <>
+                                  <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                                  Đang xác nhận...
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                                  Xác nhận
+                                </>
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {filteredPayments.length === 0 && (
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <QrCode className="h-12 w-12 text-muted-foreground" />
+                    <p className="mt-4 text-sm text-muted-foreground">
+                      Không có giao dịch nào
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </>
           )}
         </TabsContent>
       </Tabs>

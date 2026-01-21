@@ -8,6 +8,7 @@ import {
   Package,
   ShoppingCart,
   CreditCard,
+  Webhook,
   LogOut,
   Menu,
   X,
@@ -22,6 +23,7 @@ const navItems = [
   { href: "/admin/products", label: "Sản phẩm", icon: Package },
   { href: "/admin/orders", label: "Đơn hàng", icon: ShoppingCart },
   { href: "/admin/payments", label: "Thanh toán", icon: CreditCard },
+  { href: "/admin/webhooks", label: "Webhook", icon: Webhook },
 ];
 
 export default function AdminLayout({

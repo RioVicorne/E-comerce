@@ -48,18 +48,61 @@ yarn-error.log*
 *credentials*
 *password*
 *.token
+*.jwt
+*.jwk
 secrets/
 .secrets/
 config/secrets.*
 **/secrets.json
 **/credentials.json
 **/api-keys.json
+**/*.private
+**/*.priv
+*.crt
+*.cer
+*.der
+*.csr
+*.p7b
+*.p7c
+*.p7m
+*.p7s
+*.spc
+*.pfx
+*.p12
+*.keytab
+*.keystore
+*.jks
+*.p8
+*.p8e
+*.p12
+*.pfx
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+*.pub
+*.private
+*.priv
 
 # Configuration files with sensitive data - PROTECTED
 config.local.*
 *.config.local.*
 **/config.local.*
 **/local.config.*
+**/*.local.*
+**/*local*.json
+**/*local*.js
+**/*local*.ts
+**/*local*.yaml
+**/*local*.yml
+.envrc
+.env.*.local
+.env.local.*
+local.json
+local.js
+local.ts
+local.yaml
+local.yml
 
 # Database files - PROTECTED
 *.db
@@ -69,6 +112,12 @@ config.local.*
 *.db-wal
 database/
 *.dump
+*.sql
+*.sql.gz
+prisma/dev.db
+prisma/dev.db-journal
+prisma/*.db
+prisma/*.db-journal
 
 # Logs - PROTECTED (may contain sensitive info)
 logs/
@@ -108,18 +157,59 @@ ehthumbs.db
 Thumbs.db
 Desktop.ini
 
-# vercel
+# Vercel - PROTECTED
 .vercel
+.vercel/*
+!.vercel/.gitignore
+vercel.json.local
+.vercelignore.local
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
 
-# Backup files
+# Backup files - PROTECTED (may contain sensitive data)
 *.bak
 *.backup
 *.old
 *~
+*.orig
+*.save
+*.swp
+*.swo
+*~
+.#*
+#*#
+.*.swp
+.*.swo
+
+# Session and storage files - PROTECTED
+*.session
+*.session.*
+sessions/
+storage/
+.local-storage/
+localStorage/
+sessionStorage/
+*.session.json
+*.session.db
+
+# Prisma - PROTECTED (migrations may contain sensitive data in production)
+# Note: Keep migrations in git, but ignore local dev database files
+prisma/migrations/**/*.sql.backup
+prisma/migrations/**/*.sql.old
+prisma/*.db
+prisma/*.db-journal
+prisma/dev.db*
+prisma/test.db*
+
+# Test files with real secrets - PROTECTED
+**/test-secrets.*
+**/test-credentials.*
+**/*.test.secret.*
+**/*.test.key.*
+**/test.env.*
+**/test.local.*
 
 # Package manager lock files (optional - uncomment if you want to ignore)
 # package-lock.json

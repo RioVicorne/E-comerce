@@ -40,3 +40,28 @@ model Transaction {
   @@index([orderId])
   @@index([createdAt])
 }
+
+model Payment {
+  id            String   @id @default(cuid())
+  transactionId String   @unique // Unique transaction ID for this payment
+  description   String   // Transfer content (e.g., "Nap tien vao vi 1768815930428")
+  amount        Decimal  @db.Decimal(12, 2)
+  status        String   @default("pending") // "pending" | "completed" | "expired" | "failed"
+  bankName      String   @default("VPBank")
+  accountNumber String
+  accountName   String
+  userId        String?  // Optional: link to user if authenticated
+  qrGeneratedAt DateTime @default(now())
+  expiresAt     DateTime // QR expiration time
+  paidAt        DateTime? // When payment was confirmed
+  confirmedBy   String?  // Admin ID or "webhook" or "system"
+  metadata      String?  @db.Text // JSON string for additional data
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([transactionId])
+  @@index([description])
+  @@index([status])
+  @@index([userId])
+  @@index([createdAt])
+}
