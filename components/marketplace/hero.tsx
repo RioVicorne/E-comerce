@@ -81,7 +81,7 @@ export function Hero({ promotions }: HeroProps) {
       <div className="grid gap-4 lg:grid-cols-[240px_1fr_240px]">
         {/* left floating banner */}
         <div className="hidden lg:block">
-          <div className="sticky top-24 space-y-4">
+          <div className="sticky top-24 flex flex-col gap-4 h-fit">
             <FloatingBanner
               title="Chỉ 20k/tháng"
               subtitle="Giá VIP • Hỗ trợ ưu tiên"
@@ -222,7 +222,7 @@ export function Hero({ promotions }: HeroProps) {
 
         {/* right floating banner */}
         <div className="hidden lg:block">
-          <div className="sticky top-24 space-y-4">
+          <div className="sticky top-24 flex flex-col gap-4 h-fit">
             <FloatingBanner
               title="Ưu đãi & Quà tặng"
               subtitle="Thẻ quà tặng • mã ví"
@@ -253,8 +253,9 @@ function FloatingBanner({
     <motion.div
       whileHover={{ y: -4, scale: 1.01 }}
       transition={{ type: "spring", stiffness: 320, damping: 22 }}
+      className="flex-1"
     >
-      <Card className="relative overflow-hidden p-5">
+      <Card className="relative overflow-hidden p-5 h-full flex flex-col justify-center">
         <div className={cn("absolute inset-0 bg-gradient-to-br", tone)} />
         <div className="relative">
           <div className="text-sm font-extrabold tracking-tight text-foreground">

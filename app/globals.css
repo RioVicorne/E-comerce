@@ -71,6 +71,38 @@ body {
   scrollbar-width: none;  /* Firefox */
 }
 
+/* Scrollbar none utility */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Ticker banner animations */
+@keyframes scroll-left-infinite {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll-left-infinite {
+  animation: scroll-left-infinite 30s linear infinite;
+}
+
+.animate-scroll-left-infinite-slow {
+  animation: scroll-left-infinite 45s linear infinite;
+}
+
+.animate-scroll-left-infinite-fast {
+  animation: scroll-left-infinite 20s linear infinite;
+}
+
 /* Prevent zoom on input focus (iOS Safari) */
 @supports (-webkit-touch-callout: none) {
   input[type="text"],

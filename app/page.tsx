@@ -19,16 +19,29 @@ import {
   type CheckoutOrder,
 } from "@/components/marketplace/payment-modal";
 import { CartSidebar } from "@/components/marketplace/cart-sidebar";
+import { Footer } from "@/components/marketplace/footer";
+import { TickerBanner } from "@/components/marketplace/ticker-banner";
+import { ToastProvider, useToast } from "@/components/marketplace/toast";
 
-export default function HomePage() {
+function HomePageContent() {
   const [cart, setCart] = React.useState<Array<{ product: Product; qty: number }>>(
     [],
   );
   const [cartOpen, setCartOpen] = React.useState(false);
   const [checkoutOpen, setCheckoutOpen] = React.useState(false);
   const [activeOrder, setActiveOrder] = React.useState<CheckoutOrder | null>(null);
+  const { showToast } = useToast();
 
   const cartCount = cart.reduce((sum, i) => sum + i.qty, 0);
+
+  // Listen for openCart event from toast
+  React.useEffect(() => {
+    const handleOpenCart = () => {
+      setCartOpen(true);
+    };
+    window.addEventListener("openCart", handleOpenCart);
+    return () => window.removeEventListener("openCart", handleOpenCart);
+  }, []);
 
   function openCheckoutWith(items: Array<{ product: Product; qty: number }>) {
     const total = items.reduce((sum, i) => sum + i.product.salePrice * i.qty, 0);
@@ -49,6 +62,8 @@ export default function HomePage() {
       copy[idx] = { ...copy[idx], qty: copy[idx].qty + 1 };
       return copy;
     });
+    // Show toast notification
+    showToast(product);
   }
 
   function updateQuantity(productId: string, qty: number) {
@@ -71,6 +86,7 @@ export default function HomePage() {
 
   return (
     <div className="app-bg min-h-dvh overflow-x-hidden">
+      <TickerBanner />
       <Navbar
         cartCount={cartCount}
         onCartClick={() => setCartOpen(true)}
@@ -116,6 +132,16 @@ export default function HomePage() {
           setCartOpen(false);
         }}
       />
+
+      <Footer />
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <ToastProvider>
+      <HomePageContent />
+    </ToastProvider>
   );
 }
