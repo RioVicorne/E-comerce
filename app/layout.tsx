@@ -3,6 +3,8 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ConsoleErrorFilter } from "@/components/providers/console-error-filter";
+import { AuthProvider } from "@/components/providers/auth-provider";
+import { AuthModal } from "@/components/auth/auth-modal";
 
 const inter = Inter({
   variable: "--font-geist-sans",
@@ -32,7 +34,10 @@ export default function RootLayout({
       >
         <ConsoleErrorFilter />
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-          {children}
+          <AuthProvider>
+            {children}
+            <AuthModal />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

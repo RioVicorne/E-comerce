@@ -111,29 +111,29 @@ export function Hero({ promotions }: HeroProps) {
           <Button
             variant="secondary"
             size="icon"
-            className="absolute left-2 top-1/2 z-[100] -translate-y-1/2"
+            className="absolute left-2 top-1/2 z-[100] -translate-y-1/2 h-8 w-8 sm:h-9 sm:w-9"
             onClick={goToPrevious}
             disabled={isFirstSlide && promotions.length > 1}
             aria-label="Trước"
             aria-disabled={isFirstSlide && promotions.length > 1}
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
 
           {/* Right Navigation Button */}
           <Button
             variant="secondary"
             size="icon"
-            className="absolute right-2 top-1/2 z-[100] -translate-y-1/2"
+            className="absolute right-2 top-1/2 z-[100] -translate-y-1/2 h-8 w-8 sm:h-9 sm:w-9"
             onClick={goToNext}
             disabled={isLastSlide && promotions.length > 1}
             aria-label="Tiếp"
             aria-disabled={isLastSlide && promotions.length > 1}
           >
-            <ChevronRight className="h-5 w-5" />
+            <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
 
-          <div className="relative flex flex-col min-h-[280px] md:min-h-[320px] p-4 sm:p-6 md:p-10 overflow-hidden">
+          <div className="relative flex flex-col min-h-[280px] md:min-h-[320px] py-4 px-12 sm:py-6 sm:px-14 md:py-10 md:px-20 overflow-hidden">
             <div className="flex w-full flex-1 items-stretch gap-4 md:gap-6 overflow-hidden relative z-0">
               {/* Combined Content Container */}
               <div className="flex w-full items-stretch gap-4 md:gap-6 overflow-hidden">

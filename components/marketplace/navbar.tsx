@@ -36,19 +36,23 @@ import {
 import { iconMap } from "@/components/marketplace/icons";
 import { useWalletStore } from "@/lib/wallet-store";
 import { TopUpModal } from "./topup-modal";
+import { useSession, signOut } from "next-auth/react";
+import { useAuthStore } from "@/lib/auth-store";
 
 type NavbarProps = {
   cartCount?: number;
   onCartClick?: () => void;
+  onTopUpClick?: () => void;
 };
 
-export function Navbar({ cartCount = 0, onCartClick }: NavbarProps) {
+export function Navbar({ cartCount = 0, onCartClick, onTopUpClick }: NavbarProps) {
   const SearchIcon = iconMap.search;
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [searchExpanded, setSearchExpanded] = React.useState(false);
-  const [topUpOpen, setTopUpOpen] = React.useState(false);
   const balance = useWalletStore((state) => state.balance);
   const transactions = useWalletStore((state) => state.transactions);
+  const { data: session, status } = useSession();
+  const { openLogin } = useAuthStore();
 
   const navItems = [
     { href: "#news", label: "Tin tức Game" },
@@ -228,6 +232,7 @@ export function Navbar({ cartCount = 0, onCartClick }: NavbarProps) {
               ) : null}
             </Button>
 
+            {status === "authenticated" ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -248,10 +253,10 @@ export function Navbar({ cartCount = 0, onCartClick }: NavbarProps) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-semibold text-foreground truncate">
-                        Khách hàng
+                        {session?.user?.name || "Khách hàng"}
                       </div>
                       <div className="text-xs text-muted-foreground truncate">
-                        {formatVnd(balance)}
+                        {session?.user?.email}
                       </div>
                     </div>
                   </div>
@@ -301,7 +306,7 @@ export function Navbar({ cartCount = 0, onCartClick }: NavbarProps) {
                 <DropdownMenuSeparator className="bg-white/10" />
 
                 <DropdownMenuItem
-                  onClick={() => setTopUpOpen(true)}
+                  onClick={onTopUpClick}
                   className="cursor-pointer"
                 >
                   <CreditCard className="h-4 w-4" />
@@ -311,10 +316,7 @@ export function Navbar({ cartCount = 0, onCartClick }: NavbarProps) {
                 <DropdownMenuSeparator className="bg-white/10" />
 
                 <DropdownMenuItem
-                  onClick={() => {
-                    // Logout functionality (to be implemented)
-                    console.log("Đăng xuất");
-                  }}
+                  onClick={() => signOut()}
                   className="cursor-pointer text-red-400 focus:text-red-400"
                 >
                   <LogOut className="h-4 w-4" />
@@ -322,11 +324,20 @@ export function Navbar({ cartCount = 0, onCartClick }: NavbarProps) {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            ) : status === "loading" ? (
+                <div className="w-[44px] h-[44px] animate-pulse bg-white/10 rounded-xl hidden sm:block"/>
+            ) : (
+                <Button
+                  variant="ghost"
+                  onClick={openLogin}
+                  className="hidden h-[44px] px-4 font-semibold text-white/70 hover:bg-white/10 hover:text-white sm:inline-flex"
+                >
+                  Đăng nhập
+                </Button>
+            )}
           </div>
         </div>
       </div>
-
-      <TopUpModal open={topUpOpen} onOpenChange={setTopUpOpen} />
     </header>
   );
 }
